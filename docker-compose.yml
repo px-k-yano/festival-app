@@ -1,38 +1,70 @@
+version: '3.8'
+
 services:
-  # nginx:
-  #   image: nginx:latest
-  #   ports:
-  #     - 80:80
-  #   volumes:
-  #     - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-  #   depends_on:
-  #     - db
-  #     - api
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - app-network
+
   api:
-    build: ./api
+    build: 
+      context: ./api
+      dockerfile: Dockerfile
     environment:
+      - NODE_ENV=production
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=festival-app-db-user
       - DB_PASSWORD=festival-app-db-password
       - DB_NAME=mydb
     depends_on:
-      - db
-    ports:
-      - 4000:4000
+      db:
+        condition: service_healthy
+    expose:
+      - "4000"
     env_file:
       - .env
+    volumes:
+      - api_uploads:/app/uploads
+    restart: unless-stopped
+    networks:
+      - app-network
 
   db:
-    image: postgres:latest
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: festival-app-db-user
       POSTGRES_PASSWORD: festival-app-db-password
       POSTGRES_DB: mydb
     ports:
-      - 5432:5432
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./api/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./api/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U festival-app-db-user -d mydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
+
 volumes:
   db_data:
+    driver: local
+  api_uploads:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
