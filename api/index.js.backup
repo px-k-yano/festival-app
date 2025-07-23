@@ -8,9 +8,8 @@ const { EmailClient } = require("@azure/communication-email");
 const multer = require("multer");
 const path = require("path");
 const helmet = require("helmet");
-//const cors = require("cors");
+const cors = require("cors");
 const rateLimit = require("express-rate-limit");
-const cors = require("cors"); // 🔧 追加
 
 // 認証ミドルウェアのインポート
 const { authenticateApiKey } = require("./middleware/auth");
@@ -34,29 +33,12 @@ app.use(helmet({
     }
 }));
 
-// 🔧 CORS設定（複数オリジン対応）
+// CORS設定（必要に応じてPWAアプリのオリジンを指定）
 app.use(cors({
-  origin: [
-    'https://nweb3poc.vercel.app',     // Vercel本番アプリ
-    'http://localhost:8081',           // ローカル開発環境
-    'http://localhost:3000',           // React/Next.js開発用
-    'http://localhost:19006',          // Expo開発用
-    'http://localhost:19000',          // Expo Metro用
-    /^https:\/\/.*\.vercel\.app$/,     // 全てのVercelサブドメイン
-    /^http:\/\/localhost:\d+$/,        // 全てのlocalhost
-    /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // ローカルネットワーク
-    /^http:\/\/10\.\d+\.\d+\.\d+:\d+$/   // ローカルネットワーク
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'x-api-key',
-    'Accept',
-    'Origin',
-    'X-Requested-With'
-  ],
-  credentials: true
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['https://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
 }));
 
 // レート制限
@@ -74,12 +56,6 @@ app.use('/api/', limiter);
 
 // Application Gatewayからのヘッダーを信頼
 app.set("trust proxy", true);
-
-// 🔧 デバッグ用CORS情報ログ出力（オプション）
-app.use((req, res, next) => {
-  console.log(`CORS Request from: ${req.headers.origin || 'unknown'}`);
-  next();
-});
 
 // X-Forwarded-Protoヘッダーをチェック
 // app.use((req, res, next) => {
@@ -212,7 +188,7 @@ app.post("/api/user", async (req, res) => {
   /* localhost:3000/api/user/registerを呼び出す
    引数はブロックチェーンアカウントアドレスとニックネーム */
   try {
-    const response = await fetch(`${process.env.BLOCKCHAIN_KALEIDO_SERVER_BASE_URL}api/users/register`, {
+    const response = await fetch(`${process.env.BLOCKCHAIN_SERVER_BASE_URL}api/users/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -226,10 +202,6 @@ app.post("/api/user", async (req, res) => {
     });
     const json = await response.json();
     console.log(json);
-    if (!json.success) {
-      console.error("User registration failed:", json.error);
-      throw new Error(JSON.stringify({ message: json.error }));
-    }
     res.status(200).send({
       message: json.message || "ユーザー登録が完了しました",
       user: json.user
@@ -303,11 +275,12 @@ app.post("/api/box", upload.single("file"), async (req, res) => {
 
         // メール送信成功後、一時ファイルをクリーンアップ
         cleanupTempFiles();
+        const tokenId = ""; // トークンIDはブロックチェーンサーバーから取得するため、ここでは空文字列
 
         res.status(200).send({
           message: "Zip file created and sent via email",
           zipFileName: `${path.basename(zipPath)}`,
-          tokenId: response.tokenId || "",
+          tokenId,
         });
       } catch (error) {
         console.error("Error sending zip file via email:", error.message);

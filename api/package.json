@@ -5,6 +5,7 @@
     "dev": "node index.js"
   },
   "dependencies": {
+    "@azure/communication-email": "^1.0.0",
     "archiver": "^7.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -14,8 +15,7 @@
     "helmet": "^8.1.0",
     "multer": "^2.0.1",
     "pg": "^8.16.3",
-    "web3": "^4.16.0",
-    "@azure/communication-email": "^1.0.0"
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
