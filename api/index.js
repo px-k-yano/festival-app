@@ -231,9 +231,14 @@ app.post("/api/user", async (req, res) => {
       console.error("User registration failed:", json.error);
       throw new Error(JSON.stringify({ message: json.error }));
     }
+
+    // ユーザー登録成功時のレスポンス
+    const user = json.user;
     res.status(200).send({
       message: json.message || "ユーザー登録が完了しました",
-      user: json.user
+      blockchain_account_address: user.blockchain_account_address,
+      nickname: user.nickname,
+      tokenId: user.token_id
     });
   } catch (error) {
     console.error("Error calling user registration API:", error);
