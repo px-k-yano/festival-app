@@ -42,6 +42,7 @@ app.use(cors({
     'http://localhost:3000',           // React/Next.js開発用
     'http://localhost:19006',          // Expo開発用
     'http://localhost:19000',          // Expo Metro用
+    'http://192.168.11.23:8081',       // 実機ローカルIPアドレス
     /^https:\/\/.*\.vercel\.app$/,     // 全てのVercelサブドメイン
     /^http:\/\/localhost:\d+$/,        // 全てのlocalhost
     /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // ローカルネットワーク
