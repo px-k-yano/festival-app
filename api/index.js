@@ -236,7 +236,7 @@ app.post("/api/user", async (req, res) => {
     const user = json.user;
     res.status(200).send({
       message: json.message || "ユーザー登録が完了しました",
-      blockchain_account_address: user.blockchain_account_address,
+      blockchainAccountAddress: user.blockchain_account_address,
       nickname: user.nickname,
       tokenId: user.token_id
     });
@@ -313,7 +313,6 @@ app.post("/api/box", upload.single("file"), async (req, res) => {
         res.status(200).send({
           message: "Zip file created and sent via email",
           zipFileName: `${path.basename(zipPath)}`,
-          tokenId: response.tokenId || "",
         });
       } catch (error) {
         console.error("Error sending zip file via email:", error.message);
