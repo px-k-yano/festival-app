@@ -141,9 +141,9 @@ function cleanupTempFiles(excludeFiles = []) {
 }
 
 // データベースのphotosテーブルにレコードを追加する
-async function addRecord(hashValue) {
+async function addRecord(hashValue, blockchainAccountAddress) {
   return await pool.query(
-    `INSERT INTO photos (hash_value) VALUES ('${hashValue}') RETURNING *`
+    `INSERT INTO photos (hash_value, blockchain_account_address) VALUES ('${hashValue}', '${blockchainAccountAddress}') RETURNING *`
   );
 }
 
@@ -266,7 +266,7 @@ app.post("/api/box", upload.single("file"), async (req, res) => {
 
   try {
     // DBに保存する
-    const response = await addRecord(hash);
+    const response = await addRecord(hash, blockchainAccountAddress);
 
     console.log("DB response:", response.status, response.statusText);
 
@@ -305,7 +305,7 @@ app.post("/api/box", upload.single("file"), async (req, res) => {
     output.on("close", async () => {
       try {
         console.log("file", fs.readdirSync(uploadsDir));
-        const response = await sendBoxFile(zipPath);
+        // const response = await sendBoxFile(zipPath);
 
         // メール送信成功後、一時ファイルをクリーンアップ
         cleanupTempFiles();
