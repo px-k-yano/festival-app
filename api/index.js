@@ -142,8 +142,19 @@ function cleanupTempFiles(excludeFiles = []) {
 
 // データベースのphotosテーブルにレコードを追加する
 async function addRecord(hashValue, blockchainAccountAddress) {
+  // まず、ユーザーが存在するかチェック
+  const userCheck = await pool.query(
+    `SELECT blockchain_account_address FROM users WHERE blockchain_account_address = $1`,
+    [blockchainAccountAddress]
+  );
+  
+  if (userCheck.rowCount === 0) {
+    throw new Error(`ユーザーが見つかりません: ${blockchainAccountAddress}. 先にユーザー登録を行ってください。`);
+  }
+
   return await pool.query(
-    `INSERT INTO photos (hash_value, blockchain_account_address) VALUES ('${hashValue}', '${blockchainAccountAddress}') RETURNING *`
+    `INSERT INTO photos (hash_value, blockchain_account_address) VALUES ($1, $2) RETURNING *`,
+    [hashValue, blockchainAccountAddress]
   );
 }
 
@@ -254,7 +265,7 @@ app.post("/api/box", upload.single("file"), async (req, res) => {
   fs.renameSync(oldFile, newFile);
 
   // パラメータを取得
-  const blockchainAccountAddress = req.body.blockchainAccountAddress || ""; // ブロックチェーンアカウントアドレス
+  const blockchainAccountAddress = req.body.blockchain_account_address || ""; // ブロックチェーンアカウントアドレス
   const nickname = req.body.nickname || ""; // ニックネーム
   const comment = req.body.comment || ""; // コメント
 
